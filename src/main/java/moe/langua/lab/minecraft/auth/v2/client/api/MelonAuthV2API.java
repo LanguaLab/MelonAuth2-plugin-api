@@ -4,12 +4,10 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import moe.langua.lab.minecraft.auth.v2.client.api.exception.NotInitializedException;
 import moe.langua.lab.minecraft.auth.v2.client.api.json.Cache;
+import moe.langua.lab.minecraft.auth.v2.client.api.json.ChallengeOverview;
 import moe.langua.lab.minecraft.auth.v2.client.api.json.Config;
 import moe.langua.lab.minecraft.auth.v2.client.api.json.PlayerStatus;
 import moe.langua.lab.security.otp.MelonTOTP;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.entity.Player;
-import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -115,6 +113,28 @@ public class MelonAuthV2API {
         if (instance == null) throw new NotInitializedException("MelonAuthV2 API not initialized");
         return getStatusFromServer(uniqueID);
     }
+
+    public static Integer getChallengeID(UUID uniqueID) throws NotInitializedException,IOException{
+        URL getURL;
+        getURL = new URL(Config.instance.getApiURL() + "/join/" + uniqueID.toString());
+        HttpURLConnection connection = (HttpURLConnection) getURL.openConnection();
+        connection.setRequestProperty("Authorization", "MelonOTP " + Long.toHexString(otpServer.getPassNow()));
+        connection.setConnectTimeout(5000);
+        connection.setReadTimeout(5000);
+        connection.setRequestMethod("GET");
+        connection.setUseCaches(false);
+        int rCode = connection.getResponseCode();
+        switch (rCode){
+            case 204:
+                return null;
+            case 200:
+                ChallengeOverview challengeOverview = prettyGSON.fromJson(new InputStreamReader(connection.getInputStream()),ChallengeOverview.class);
+                return challengeOverview.getChallengeID();
+            default:
+                throw new IOException("API server returned response code " + rCode);
+        }
+    }
+
 
     private static PlayerStatus getStatusFromServer(UUID uniqueID) throws IOException {
         URL getURL;
