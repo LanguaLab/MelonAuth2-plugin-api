@@ -28,6 +28,11 @@
             <id>CodeMC</id>
             <url>https://repo.codemc.org/repository/maven-public</url>
         </repository>
+        <repository>
+            <id>gh-melon-otp</id>
+            <name>GitHub LanguaLab Apache Maven Packages</name>
+            <url>https://maven.pkg.github.com/LanguaLab/MelonOTP</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -121,5 +126,13 @@
             </plugin>
         </plugins>
     </build>
+
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub LanguaLab Apache Maven Packages</name>
+            <url>https://maven.pkg.github.com/LanguaLab/MelonAuth2-plugin-api</url>
+        </repository>
+    </distributionManagement>
 
 </project>

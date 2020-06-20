@@ -32,7 +32,6 @@ public class MelonAuthV2API {
     private final Map<UUID, Long> cacheMap;
     private final Map<UUID, Status> statusMap = new ConcurrentHashMap<>();
     private final LinkedList<UUID> refreshList = new LinkedList<>();
-    private final HashMap<JavaPlugin, Runnable> events = new HashMap<>();
 
     public MelonAuthV2API(File dataRoot, Logger logger) throws IOException {
         if (!dataRoot.mkdir() && !dataRoot.isDirectory()) {
