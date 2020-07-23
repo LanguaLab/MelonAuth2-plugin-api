@@ -3,11 +3,9 @@ package moe.langua.lab.minecraft.auth.v2.client.api;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import moe.langua.lab.minecraft.auth.v2.client.api.exception.NotInitializedException;
-import moe.langua.lab.minecraft.auth.v2.client.api.json.Cache;
-import moe.langua.lab.minecraft.auth.v2.client.api.json.ChallengeOverview;
-import moe.langua.lab.minecraft.auth.v2.client.api.json.Config;
-import moe.langua.lab.minecraft.auth.v2.client.api.json.PlayerStatus;
+import moe.langua.lab.minecraft.auth.v2.client.api.json.*;
 import moe.langua.lab.security.otp.MelonTOTP;
+import org.bukkit.Bukkit;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -23,11 +21,12 @@ public class MelonAuthV2API {
     private static final long OTP_EXPIRATION = 30000;
     private static final Gson prettyGSON = new GsonBuilder().setPrettyPrinting().create();
     private static MelonAuthV2API instance = null;
+    private static Long verificationLife = null;
+    private static MelonTOTP otpServer;
     private final File cacheFile;
     private final File configFile;
-    private static MelonTOTP otpServer;
     private final Logger logger;
-    private final Map<UUID, Long> cacheMap;
+    private final Map<UUID, Record> cacheMap;
     private final Map<UUID, Status> statusMap = new ConcurrentHashMap<>();
     private final LinkedList<UUID> refreshList = new LinkedList<>();
 
@@ -41,7 +40,7 @@ public class MelonAuthV2API {
         if (!firstStart && !configFile.isFile()) {
             throw new IOException(configFile.getAbsolutePath() + " should be a file, but found a directory.");
         }
-        Config config = prettyGSON.fromJson(new InputStreamReader(new FileInputStream(configFile),StandardCharsets.UTF_8), Config.class);
+        Config config = prettyGSON.fromJson(new InputStreamReader(new FileInputStream(configFile), StandardCharsets.UTF_8), Config.class);
         config = config == null ? Config.getDefault() : config.check();
         FileOutputStream configOutputStream = new FileOutputStream(configFile, false);
         configOutputStream.write(prettyGSON.toJson(config).getBytes(StandardCharsets.UTF_8));
@@ -53,8 +52,8 @@ public class MelonAuthV2API {
         if (!cacheFile.createNewFile() && !cacheFile.isFile()) {
             throw new IOException(cacheFile.getAbsolutePath() + " should be a file, but found a directory.");
         }
-        Map<UUID, Long> cacheMap;
-        Cache cache = prettyGSON.fromJson(new InputStreamReader(new FileInputStream(cacheFile),StandardCharsets.UTF_8), Cache.class);
+        Map<UUID, Record> cacheMap;
+        Cache cache = prettyGSON.fromJson(new InputStreamReader(new FileInputStream(cacheFile), StandardCharsets.UTF_8), Cache.class);
         cache = cache == null ? Cache.getEmpty() : cache.check();
         cacheMap = Cache.getRecordMap(cache);
         FileOutputStream cacheOutputStream = new FileOutputStream(cacheFile, false);
@@ -104,19 +103,35 @@ public class MelonAuthV2API {
         instance = this;
     }
 
-    public static Status getPlayerStatus(UUID uniqueID) throws NotInitializedException {
+    public static Status getStatus(UUID uniqueID) throws NotInitializedException {
         if (instance == null) throw new NotInitializedException("MelonAuthV2 API not initialized");
         return instance.statusMap.getOrDefault(uniqueID, Status.UNKNOWN);
     }
 
-    public static PlayerStatus getPlayerStatusExact(UUID uniqueID) throws NotInitializedException, IOException {
-        if (instance == null) throw new NotInitializedException("MelonAuthV2 API not initialized");
-        return getStatusFromServer(uniqueID);
+    public static Long getVerificationLife() {
+        return verificationLife;
     }
 
-    public static Integer getChallengeID(UUID uniqueID) throws NotInitializedException,IOException{
+    public static PlayerStatus getPlayerStatusExact(UUID uniqueID) throws NotInitializedException, IOException {
+        if (instance == null) throw new NotInitializedException("MelonAuthV2 API not initialized");
+        PlayerStatus status = getStatusFromServer(uniqueID);
+        if (status.getVerified()) instance.updateAllow(uniqueID, status.getCommitTime());
+        return status;
+    }
+
+    public static PlayerStatus getPlayerStatus(UUID uniqueID) throws NotInitializedException, IOException {
+        if (instance == null) throw new NotInitializedException("MelonAuthV2 API not initialized");
+        Record cache = instance.cacheMap.get(uniqueID);
+        if (cache != null) {
+            return PlayerStatus.get(uniqueID, true, cache.getExpireTime(), verificationLife);
+        } else {
+            return getPlayerStatusExact(uniqueID);
+        }
+    }
+
+    public static ChallengeOverview getChallengeID(UUID uniqueID) throws NotInitializedException, IOException {
         URL getURL;
-        getURL = new URL(Config.instance.getApiURL() + "/join/" + uniqueID.toString());
+        getURL = new URL(Config.instance.getApiURL() + "/require/" + uniqueID.toString());
         HttpURLConnection connection = (HttpURLConnection) getURL.openConnection();
         connection.setRequestProperty("Authorization", "MelonOTP " + Long.toHexString(otpServer.getPassNow()));
         connection.setConnectTimeout(5000);
@@ -124,15 +139,10 @@ public class MelonAuthV2API {
         connection.setRequestMethod("GET");
         connection.setUseCaches(false);
         int rCode = connection.getResponseCode();
-        switch (rCode){
-            case 204:
-                return null;
-            case 200:
-                ChallengeOverview challengeOverview = prettyGSON.fromJson(new InputStreamReader(connection.getInputStream()),ChallengeOverview.class);
-                return challengeOverview.getChallengeID();
-            default:
-                throw new IOException("API server returned response code " + rCode);
+        if (rCode == 200) {
+            return prettyGSON.fromJson(new InputStreamReader(connection.getInputStream()), ChallengeOverview.class);
         }
+        throw new IOException("API server returned response code " + rCode);
     }
 
 
@@ -141,14 +151,16 @@ public class MelonAuthV2API {
         getURL = new URL(Config.instance.getApiURL() + "/get/status/" + uniqueID.toString());
         HttpURLConnection connection = (HttpURLConnection) getURL.openConnection();
         connection.setRequestProperty("Authorization", "MelonOTP " + Long.toHexString(otpServer.getPassNow()));
-        connection.setConnectTimeout(5000);
-        connection.setReadTimeout(5000);
+        connection.setConnectTimeout(10000);
+        connection.setReadTimeout(10000);
         connection.setRequestMethod("GET");
         connection.setUseCaches(false);
         int rCode = connection.getResponseCode();
         switch (rCode) {
             case 200:
-                return prettyGSON.fromJson(new BufferedReader(new InputStreamReader(connection.getInputStream())), PlayerStatus.class);
+                PlayerStatus playerStatus = prettyGSON.fromJson(new BufferedReader(new InputStreamReader(connection.getInputStream())), PlayerStatus.class);
+                verificationLife = playerStatus.getVerificationLife();
+                return playerStatus;
             case 403:
                 throw new IOException("API Server refused the request. It may caused by incorrect clientKey or incorrect system time settings.");
             default:
@@ -161,9 +173,15 @@ public class MelonAuthV2API {
         statusMap.remove(uniqueID);
     }
 
-    void loginPlayer(UUID uniqueID) {
+    private void updateAllow(UUID uniqueID, Long commitTime) {
+        if (Bukkit.getPlayer(uniqueID).isOnline()) statusMap.put(uniqueID, Status.VERIFIED);
+        cacheMap.put(uniqueID, Record.newCache(uniqueID, commitTime));
+        refreshList.remove(uniqueID);
+    }
+
+    protected void loginPlayer(UUID uniqueID) {
         if (cacheMap.containsKey(uniqueID)) {
-            if (cacheMap.get(uniqueID) > System.currentTimeMillis()) {
+            if (cacheMap.get(uniqueID).getExpireTime() > System.currentTimeMillis()) {
                 statusMap.put(uniqueID, Status.VERIFIED);
                 return;
             } else {
@@ -174,7 +192,7 @@ public class MelonAuthV2API {
             PlayerStatus playerStatus = getStatusFromServer(uniqueID);
             if (playerStatus.getVerified()) {
                 statusMap.put(uniqueID, Status.VERIFIED);
-                cacheMap.put(uniqueID, System.currentTimeMillis() + Config.instance.getCacheLifeInMilliSeconds());
+                cacheMap.put(uniqueID, Record.newCache(uniqueID, playerStatus.getCommitTime()));
             } else {
                 statusMap.put(uniqueID, Status.NOT_VERIFIED);
             }
@@ -188,7 +206,7 @@ public class MelonAuthV2API {
     protected void saveCache() throws IOException {
         long now = System.currentTimeMillis();
         for (UUID x : cacheMap.keySet()) {
-            if (cacheMap.get(x) < now) cacheMap.remove(x);
+            if (cacheMap.get(x).getExpireTime() < now) cacheMap.remove(x);
         }
         Cache cache = Cache.getCacheList(cacheMap);
         FileWriter writer = new FileWriter(cacheFile, false);

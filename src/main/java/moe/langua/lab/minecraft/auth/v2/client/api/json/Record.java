@@ -9,19 +9,23 @@ public class Record {
     @SerializedName("uuid")
     @Expose
     private String uniqueID = null;
+    @SerializedName("commitTime")
+    @Expose
+    private Long commitTime = null;
     @SerializedName("expireTime")
     @Expose
     private Long expireTime = null;
 
-    public static Record getWithExpireTimeStamp(UUID uniqueID, long expireTimeStamp) {
+    public static Record getWithExpireTimeStamp(UUID uniqueID, Long commitTime, Long expireTimeStamp) {
         Record resultRecord = new Record();
         resultRecord.uniqueID = uniqueID.toString();
+        resultRecord.commitTime = commitTime;
         resultRecord.expireTime = expireTimeStamp;
         return resultRecord;
     }
 
-    public static Record newCache(UUID uniqueID) {
-        return Record.getWithExpireTimeStamp(uniqueID,
+    public static Record newCache(UUID uniqueID, Long commitTime) {
+        return Record.getWithExpireTimeStamp(uniqueID, commitTime,
                 System.currentTimeMillis() + Config.instance.getCacheLifeInMilliSeconds());
     }
 

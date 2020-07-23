@@ -18,6 +18,10 @@ public class Config {
     @Expose
     private Long cacheLifeInMilliSeconds = null;
 
+    public static Config getDefault() {
+        return new Config().check();
+    }
+
     public String getApiURL() {
         return apiURL;
     }
@@ -25,7 +29,6 @@ public class Config {
     public String getClientKey() {
         return clientKey;
     }
-
 
     public Long getRetryDelayInMilliSeconds() {
         return retryDelayInMilliSeconds;
@@ -37,19 +40,16 @@ public class Config {
 
     public Config check() {
         if (apiURL == null) apiURL = "http://127.0.0.1";
+        apiURL = removeSlashAtTheEnd(apiURL);
         if (clientKey == null) clientKey = "CLIENT_KEY";
         if (retryDelayInMilliSeconds == null) retryDelayInMilliSeconds = 10000L;
-        if (cacheLifeInMilliSeconds == null) cacheLifeInMilliSeconds = 86400000L; //1 day default
+        if (cacheLifeInMilliSeconds == null) cacheLifeInMilliSeconds = 864000000L; //10 day by default
         return this;
     }
 
-    public static Config getDefault(){
-        return new Config().check();
-    }
-
-    private String removeSlashAtTheEnd(String target){
-        while (target.endsWith("/")){
-            target = target.substring(0,target.length()-1);
+    private String removeSlashAtTheEnd(String target) {
+        while (target.endsWith("/")) {
+            target = target.substring(0, target.length() - 1);
         }
         return target;
     }

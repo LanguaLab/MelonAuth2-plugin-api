@@ -14,37 +14,38 @@ public class Cache {
     @Expose
     private List<Record> records = null;
 
-    public static Map<UUID, Long> getRecordMap(Cache cache) {
-        ConcurrentHashMap<UUID, Long> resultMap = new ConcurrentHashMap<>();
+    public static Map<UUID, Record> getRecordMap(Cache cache) {
+        ConcurrentHashMap<UUID, Record> resultMap = new ConcurrentHashMap<>();
         long now = System.currentTimeMillis();
         for (Record x : cache.records) {
             if (x.getExpireTime() < now) continue;
-            resultMap.put(x.getUniqueID(), x.getExpireTime());
+            resultMap.put(x.getUniqueID(), x);
         }
         return resultMap;
     }
 
-    public static Cache getCacheList(Map<UUID, Long> e) {
+    public static Cache getCacheList(Map<UUID, Record> e) {
         Cache resultCache = new Cache();
         resultCache.records = new ArrayList<>();
+        ArrayList<Record> records = new ArrayList<>(e.values());
         long now = System.currentTimeMillis();
-        for (UUID x : e.keySet()) {
-            long expireTime = e.get(x);
+        for (Record x : records) {
+            long expireTime = x.getExpireTime();
             if (expireTime < now) continue;
-            resultCache.records.add(Record.getWithExpireTimeStamp(x, expireTime));
+            resultCache.records.add(x);
         }
         return resultCache;
     }
 
-    public Cache check(){
-        if(records==null) records= new ArrayList<>();
-        return this;
-    }
-
-    public static Cache getEmpty(){
+    public static Cache getEmpty() {
         Cache resultCache = new Cache();
         resultCache.records = new ArrayList<>();
         return resultCache;
+    }
+
+    public Cache check() {
+        if (records == null) records = new ArrayList<>();
+        return this;
     }
 
 
