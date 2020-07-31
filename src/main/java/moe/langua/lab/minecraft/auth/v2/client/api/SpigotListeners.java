@@ -20,7 +20,7 @@ public class SpigotListeners implements Listener {
         if (event.getLoginResult().equals(AsyncPlayerPreLoginEvent.Result.ALLOWED))
             instance.loginPlayer(event.getUniqueId());
         try {
-            Bukkit.getLogger().info("Status of uuid " + event.getUniqueId().toString() + " is " + MelonAuthV2API.getPlayerStatus(event.getUniqueId()));
+            Bukkit.getLogger().info("Status of uuid " + event.getUniqueId().toString() + " is " + MelonAuthV2API.getStatus((event.getUniqueId())));
         } catch (NotInitializedException ignore) {
         }
     }

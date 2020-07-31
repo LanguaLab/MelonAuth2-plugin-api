@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import moe.langua.lab.minecraft.auth.v2.client.api.exception.NotInitializedException;
 import moe.langua.lab.minecraft.auth.v2.client.api.json.*;
-import moe.langua.lab.security.otp.MelonTOTP;
 import org.bukkit.Bukkit;
 
 import java.io.*;
@@ -17,12 +16,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class MelonAuthV2API {
-    private static final long TRUNCATE_VALUE = 0x100000000L;
-    private static final long OTP_EXPIRATION = 30000;
     private static final Gson prettyGSON = new GsonBuilder().setPrettyPrinting().create();
     private static MelonAuthV2API instance = null;
     private static Long verificationLife = null;
-    private static MelonTOTP otpServer;
     private final File cacheFile;
     private final File configFile;
     private final Logger logger;
@@ -63,7 +59,6 @@ public class MelonAuthV2API {
 
         this.logger = logger;
         this.cacheMap = cacheMap;
-        otpServer = new MelonTOTP(Config.instance.getClientKey().getBytes(StandardCharsets.UTF_8), TRUNCATE_VALUE, OTP_EXPIRATION);
 
         if (firstStart) {
             logger.warning("First start detected. Please configure the plugin before next start.");
@@ -133,9 +128,9 @@ public class MelonAuthV2API {
         URL getURL;
         getURL = new URL(Config.instance.getApiURL() + "/require/" + uniqueID.toString());
         HttpURLConnection connection = (HttpURLConnection) getURL.openConnection();
-        connection.setRequestProperty("Authorization", "MelonOTP " + Long.toHexString(otpServer.getPassNow()));
-        connection.setConnectTimeout(5000);
-        connection.setReadTimeout(5000);
+        connection.setRequestProperty("Authorization", "Basic "+Config.instance.getBasicAuthString());
+        connection.setConnectTimeout(10000);
+        connection.setReadTimeout(10000);
         connection.setRequestMethod("GET");
         connection.setUseCaches(false);
         int rCode = connection.getResponseCode();
@@ -150,7 +145,7 @@ public class MelonAuthV2API {
         URL getURL;
         getURL = new URL(Config.instance.getApiURL() + "/get/status/" + uniqueID.toString());
         HttpURLConnection connection = (HttpURLConnection) getURL.openConnection();
-        connection.setRequestProperty("Authorization", "MelonOTP " + Long.toHexString(otpServer.getPassNow()));
+        connection.setRequestProperty("Authorization", "Basic "+Config.instance.getBasicAuthString());
         connection.setConnectTimeout(10000);
         connection.setReadTimeout(10000);
         connection.setRequestMethod("GET");
