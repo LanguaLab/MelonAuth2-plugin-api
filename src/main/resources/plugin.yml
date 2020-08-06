@@ -1,4 +1,4 @@
 name: MelonAuth2-Plugin-API
-main: moe.langua.lab.minecraft.auth.v2.client.api.SpigotLoader
-version: 1.1α
+main: moe.langua.lab.minecraft.auth.v2.plugin.api.SpigotLoader
+version: 1.2α
 api-version: "1.13"

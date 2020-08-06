@@ -1,4 +1,4 @@
-package moe.langua.lab.minecraft.auth.v2.client.api.json;
+package moe.langua.lab.minecraft.auth.v2.plugin.api;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;

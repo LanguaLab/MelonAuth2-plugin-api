@@ -1,4 +1,4 @@
-package moe.langua.lab.minecraft.auth.v2.client.api.json;
+package moe.langua.lab.minecraft.auth.v2.plugin.api.json;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
@@ -28,8 +28,8 @@ public class PlayerStatus {
         return statusInstance;
     }
 
-    public String getUniqueID() {
-        return uniqueID;
+    public UUID getUniqueID() {
+        return UUID.fromString(uniqueID);
     }
 
     public Boolean getVerified() {
