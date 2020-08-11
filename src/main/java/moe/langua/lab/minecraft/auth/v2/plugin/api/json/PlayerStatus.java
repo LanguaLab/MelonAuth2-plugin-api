@@ -5,6 +5,14 @@ import com.google.gson.annotations.SerializedName;
 
 import java.util.UUID;
 
+/**
+ * This is a JSON serialization class. <br>
+ *
+ * <code>uniqueID</code> is the UUID of the player.
+ * <code>verified</code> is <code>true</code> or <code>false</code> depend on weather the player has completed the challenge.
+ * <code>commitTime</code> will be a non-zero value if the player is verified. Is a timestamp when the player completed the challenge.
+ * <code>verificationLife</code> is a api side config value, which describe when the verification will expired after commitTime. It's a static value if the server side settings has not changed.
+ */
 public class PlayerStatus {
     @SerializedName("uniqueID")
     @Expose

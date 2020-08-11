@@ -33,7 +33,7 @@ public class Settings {
 
     public static Settings check(Settings settingsInstance) throws MalformedURLException {
         if (settingsInstance.apiURL == null) settingsInstance.apiURL = "http://127.0.0.1";
-        if(settingsInstance.webappURL==null) settingsInstance.webappURL = "http://127.0.0.1";
+        if (settingsInstance.webappURL == null) settingsInstance.webappURL = "http://127.0.0.1";
         settingsInstance.apiURL = Utils.removeSlashAtTheEnd(settingsInstance.apiURL);
         settingsInstance.webappURL = Utils.removeSlashAtTheEnd(settingsInstance.webappURL);
         new URL(settingsInstance.apiURL);
@@ -66,16 +66,16 @@ public class Settings {
 
     public void reload(Settings newSettings) throws MalformedURLException {
         Settings.check(newSettings);
-            this.apiURL = newSettings.apiURL;
-            this.serverName = newSettings.serverName;
-            this.secretKey = newSettings.secretKey;
-            this.retryInterval = newSettings.retryInterval;
+        this.apiURL = newSettings.apiURL;
+        this.serverName = newSettings.serverName;
+        this.secretKey = newSettings.secretKey;
+        this.retryInterval = newSettings.retryInterval;
     }
 
     public URL getApiURL() {
-        try{
+        try {
             return new URL(apiURL);
-        }catch (MalformedURLException ignore){
+        } catch (MalformedURLException ignore) {
             return null;
         }
     }
@@ -93,9 +93,9 @@ public class Settings {
     }
 
     public URL getWebappURL() {
-        try{
+        try {
             return new URL(webappURL);
-        }catch (MalformedURLException ignore){
+        } catch (MalformedURLException ignore) {
             return null;
         }
     }

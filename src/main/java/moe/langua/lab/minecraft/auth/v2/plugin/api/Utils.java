@@ -8,6 +8,7 @@ import java.security.SecureRandom;
 public class Utils {
     public static final Gson prettyGSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
     private static final char[] charSets = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890".toCharArray();
+
     public static String getRandomString(int length) {
         SecureRandom random = new SecureRandom();
         StringBuilder stringBuilder = new StringBuilder();
