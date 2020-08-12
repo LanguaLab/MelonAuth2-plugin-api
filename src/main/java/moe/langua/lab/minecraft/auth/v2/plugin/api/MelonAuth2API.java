@@ -90,6 +90,14 @@ public class MelonAuth2API {
         return instance.playerStatusConcurrentHashMap.get(uniqueID);
     }
 
+    public URL getApiURL(){
+        return settings.getApiURL();
+    }
+
+    public URL getWebAppURL(){
+        return settings.getWebappURL();
+    }
+
     protected void loginPlayer(UUID uniqueID) {
         onlinePlayers.add(uniqueID);
         PlayerStatus playerStatus;
@@ -159,4 +167,6 @@ public class MelonAuth2API {
         byte[] encodedAuthorization = Base64.getEncoder().encode(authorizationString.getBytes(StandardCharsets.UTF_8));
         return "Basic " + new String(encodedAuthorization, StandardCharsets.UTF_8);
     }
+
+
 }

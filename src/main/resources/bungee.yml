@@ -1,2 +1,4 @@
   name: MelonAuth2-Plugin-API
   main: moe.langua.lab.minecraft.auth.v2.plugin.api.BungeeCordLoader
+  version: ${project.version}
+  author: langua
