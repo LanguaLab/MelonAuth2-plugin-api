@@ -28,7 +28,11 @@ public class SpigotLoader extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onPlayerLogin(AsyncPlayerPreLoginEvent event) {
-        instance.loginPlayer(event.getUniqueId());
+        LoginResult result = instance.loginPlayer(event.getUniqueId());
+        if (!result.isAllowLogin()) {
+            event.setLoginResult(AsyncPlayerPreLoginEvent.Result.KICK_OTHER);
+            event.setKickMessage(result.getKickedMessage());
+        }
     }
 
     @EventHandler
