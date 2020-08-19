@@ -12,7 +12,6 @@ import java.util.UUID;
  * use {@link MelonAuth2API#registerLoginEvent(LoginEvent)} to register a LoginEvent.
  */
 public interface LoginEvent {
-
-    void login(UUID playerUniqueID, PlayerStatus playerStatus, LoginResult loginResult);
+    void login(UUID uniqueID, PlayerStatus playerStatus, LoginResult loginResult);
 
 }

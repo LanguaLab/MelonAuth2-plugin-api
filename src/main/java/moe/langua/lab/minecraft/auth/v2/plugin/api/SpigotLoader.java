@@ -18,6 +18,7 @@ public class SpigotLoader extends JavaPlugin implements Listener {
             throw new IllegalArgumentException(getDataFolder().getAbsolutePath() + " should be a directory, but found a file.");
         try {
             instance = new MelonAuth2API(new File(getDataFolder(), "config.json"));
+            instance.checkSettings();
         } catch (IOException e) {
             e.printStackTrace();
             this.getServer().getPluginManager().disablePlugin(this);

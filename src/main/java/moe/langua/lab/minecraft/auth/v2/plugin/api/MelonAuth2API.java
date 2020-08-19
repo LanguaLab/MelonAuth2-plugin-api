@@ -13,10 +13,10 @@ import java.util.*;
 import java.util.concurrent.*;
 
 public class MelonAuth2API {
-    private static final ExecutorService scheduler = Executors.newSingleThreadExecutor();
-    private static final ConcurrentHashMap<Integer, StatusUpdateEvent> statusUpdateEvents = new ConcurrentHashMap<>();
     private static MelonAuth2API instance;
     private static Settings settings;
+    private final ExecutorService scheduler = Executors.newSingleThreadExecutor();
+    private final ConcurrentHashMap<Integer, StatusUpdateEvent> statusUpdateEvents = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, PlayerStatus> playerStatusConcurrentHashMap = new ConcurrentHashMap<>();
     private final HashSet<UUID> onlinePlayers = new HashSet<>();
     private final ConcurrentHashMap<Integer, LoginEvent> loginEvents = new ConcurrentHashMap<>();
@@ -26,7 +26,6 @@ public class MelonAuth2API {
         settings = Settings.load(configFile);
         Settings.check(settings);
         Settings.save(settings, configFile);
-        getPlayerStatusExact(UUID.fromString("f0e8b790-8539-45b0-a052-dc6b922208c5"));
         ScheduledExecutorService retryService = Executors.newSingleThreadScheduledExecutor();
         retryService.schedule(() -> {
             if (retryList.isEmpty()) return;
@@ -71,13 +70,13 @@ public class MelonAuth2API {
 
     public static int registerPlayerStatusUpdateEvent(StatusUpdateEvent event) {
         int i = 0;
-        while (statusUpdateEvents.containsKey(i)) i++;
-        statusUpdateEvents.put(i, event);
+        while (instance.statusUpdateEvents.containsKey(i)) i++;
+        instance.statusUpdateEvents.put(i, event);
         return i;
     }
 
     public static boolean unregisterPlayerStatusUpdateEvent(int eventID) {
-        return statusUpdateEvents.remove(eventID) != null;
+        return instance.statusUpdateEvents.remove(eventID) != null;
     }
 
     /**
@@ -108,8 +107,8 @@ public class MelonAuth2API {
     public static PlayerStatus getPlayerStatusExact(UUID uniqueID) throws IOException {
         BufferedReader reader = getBufferedReaderFromURL(settings.getApiURL() + "/get/status/" + uniqueID.toString(), getAuthorizationHeader());
         PlayerStatus status = Utils.prettyGSON.fromJson(reader, PlayerStatus.class);
-        scheduler.submit(() -> {
-            for (StatusUpdateEvent event : statusUpdateEvents.values()) {
+        instance.scheduler.submit(() -> {
+            for (StatusUpdateEvent event : instance.statusUpdateEvents.values()) {
                 event.onPlayerStatusUpdate(uniqueID, status);
             }
         });
@@ -120,6 +119,34 @@ public class MelonAuth2API {
         String authorizationString = settings.getServerName() + ":" + settings.getSecretKey();
         byte[] encodedAuthorization = Base64.getEncoder().encode(authorizationString.getBytes(StandardCharsets.UTF_8));
         return "Basic " + new String(encodedAuthorization, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Pull a challenge for a player.
+     *
+     * @return a {@link ChallengeOverview} instance.
+     * @throws IOException          if network error occurred.
+     * @throws NullPointerException if MelonAuthAPI config file not load properly.
+     */
+    public static ChallengeOverview requireChallenge(UUID uniqueID) throws IOException {
+        BufferedReader reader = getBufferedReaderFromURL(settings.getApiURL() + "/require/" + uniqueID.toString(), getAuthorizationHeader());
+        return Utils.prettyGSON.fromJson(reader, ChallengeOverview.class);
+    }
+
+    /**
+     * Get the challenge detail of a player.
+     *
+     * @return a {@link ChallengeDetail} instance.
+     * @throws IOException          if network error occurred.
+     * @throws NullPointerException if MelonAuthAPI config file not load properly.
+     */
+    public static ChallengeDetail getChallengeDetail(UUID uniqueID) throws IOException {
+        BufferedReader reader = getBufferedReaderFromURL(settings.getApiURL() + "/get/challenge/" + uniqueID.toString(), getAuthorizationHeader());
+        return Utils.prettyGSON.fromJson(reader, ChallengeDetail.class);
+    }
+
+    public void checkSettings() throws IOException {
+        getPlayerStatusExact(UUID.fromString("f0e8b790-8539-45b0-a052-dc6b922208c5"));
     }
 
     protected LoginResult loginPlayer(UUID uniqueID) {
@@ -145,30 +172,6 @@ public class MelonAuth2API {
     protected void logOutPlayer(UUID uniqueID) {
         onlinePlayers.remove(uniqueID);
         playerStatusConcurrentHashMap.remove(uniqueID);
-    }
-
-    /**
-     * Pull a challenge for a player.
-     *
-     * @return a {@link ChallengeOverview} instance.
-     * @throws IOException          if network error occurred.
-     * @throws NullPointerException if MelonAuthAPI config file not load properly.
-     */
-    public ChallengeOverview requireChallenge(UUID uniqueID) throws IOException {
-        BufferedReader reader = getBufferedReaderFromURL(settings.getApiURL() + "/require/" + uniqueID.toString(), getAuthorizationHeader());
-        return Utils.prettyGSON.fromJson(reader, ChallengeOverview.class);
-    }
-
-    /**
-     * Get the challenge detail of a player.
-     *
-     * @return a {@link ChallengeDetail} instance.
-     * @throws IOException          if network error occurred.
-     * @throws NullPointerException if MelonAuthAPI config file not load properly.
-     */
-    public ChallengeDetail getChallengeDetail(UUID uniqueID) throws IOException {
-        BufferedReader reader = getBufferedReaderFromURL(settings.getApiURL() + "/get/challenge/" + uniqueID.toString(), getAuthorizationHeader());
-        return Utils.prettyGSON.fromJson(reader, ChallengeDetail.class);
     }
 
 
