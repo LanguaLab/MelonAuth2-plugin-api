@@ -11,8 +11,11 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MelonAuth2API {
+    private final static AtomicInteger loginEventID = new AtomicInteger(0);
+    private final static AtomicInteger playerStatusUpdateEventID = new AtomicInteger(0);
     private static MelonAuth2API instance;
     private static Settings settings;
     private final ExecutorService scheduler = Executors.newSingleThreadExecutor();
@@ -58,10 +61,10 @@ public class MelonAuth2API {
     }
 
     public static int registerLoginEvent(LoginEvent event) {
-        int i = 0;
-        while (instance.loginEvents.containsKey(i)) i++;
-        instance.loginEvents.put(i, event);
-        return i;
+        if (loginEventID.get() == Integer.MAX_VALUE) throw new IllegalArgumentException("Too many events registered!");
+        int eventID = loginEventID.addAndGet(1);
+        instance.loginEvents.put(eventID, event);
+        return eventID;
     }
 
     public static boolean unregisterLoginEvent(int eventID) {
@@ -69,10 +72,11 @@ public class MelonAuth2API {
     }
 
     public static int registerPlayerStatusUpdateEvent(StatusUpdateEvent event) {
-        int i = 0;
-        while (instance.statusUpdateEvents.containsKey(i)) i++;
-        instance.statusUpdateEvents.put(i, event);
-        return i;
+        if (playerStatusUpdateEventID.get() == Integer.MAX_VALUE)
+            throw new IllegalArgumentException("Too many events registered!");
+        int eventID = playerStatusUpdateEventID.addAndGet(1);
+        instance.statusUpdateEvents.put(eventID, event);
+        return eventID;
     }
 
     public static boolean unregisterPlayerStatusUpdateEvent(int eventID) {
