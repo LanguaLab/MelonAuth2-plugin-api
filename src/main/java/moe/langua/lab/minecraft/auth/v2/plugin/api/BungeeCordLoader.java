@@ -1,8 +1,8 @@
 package moe.langua.lab.minecraft.auth.v2.plugin.api;
 
 import net.md_5.bungee.api.chat.TextComponent;
+import net.md_5.bungee.api.event.LoginEvent;
 import net.md_5.bungee.api.event.PlayerDisconnectEvent;
-import net.md_5.bungee.api.event.PreLoginEvent;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.event.EventHandler;
@@ -19,6 +19,7 @@ public class BungeeCordLoader extends Plugin implements Listener {
             throw new IllegalArgumentException(getDataFolder().getAbsolutePath() + " should be a directory, but found a file.");
         try {
             instance = new MelonAuth2API(new File(getDataFolder(), "config.json"));
+            instance.checkSettings();
         } catch (IOException e) {
             e.printStackTrace();
             return;
@@ -27,7 +28,7 @@ public class BungeeCordLoader extends Plugin implements Listener {
     }
 
     @EventHandler
-    public void onPlayerPreLogin(PreLoginEvent event) {
+    public void onPlayerLogin(LoginEvent event) {
         event.registerIntent(this);
         this.getProxy().getScheduler().runAsync(this, () -> {
             LoginResult result = instance.loginPlayer(event.getConnection().getUniqueId());
