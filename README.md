@@ -1,0 +1,3 @@
+Build Command
+
+`mvn package`
