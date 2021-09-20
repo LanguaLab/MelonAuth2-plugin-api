@@ -6,7 +6,7 @@
 
     <groupId>moe.langua.lab.minecraft.auth.v2.plugin.api</groupId>
     <artifactId>MelonAuth2-plugin-api</artifactId>
-    <version>1.2-gamma</version>
+    <version>1.2.1-alpha</version>
 
     <properties>
         <maven.compiler.target>1.8</maven.compiler.target>
