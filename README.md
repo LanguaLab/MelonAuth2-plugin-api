@@ -14,6 +14,6 @@ To do so, run command `mvn install` under the root project directory.
 
 ## Unofficial Public API
 These contents are provided by third parties, and we do not guarantee that they are safe, please use them as appropriate.
-| API URL | APP URL | secretKey | serverName |
-| ----------- | ----------- | ----------- | ----------- |
+| API URL | APP URL | secretKey | serverName | DATA FILE |
+| ----------- | ----------- | ----------- | ----------- | ----------- |
 | https://mauth.blingwang.cn/api/ | https://mauth.blingwang.cn/ | MelonAuth_Blw | MelonAuth_Blw | Not yet provided |
